@@ -114,6 +114,7 @@ class Game:
         for i, player in enumerate(self.position.players):
             if i == your_player_index:
                 continue
+            player_outcomes = []
             has_to_have = False
             for card in guess:
                 if player.known_cards.get(card):
@@ -124,10 +125,15 @@ class Game:
                 elif player.possible_cards.get(card):
                     outcome = Position(self)
                     outcome.add_guess(Guess(your_player_index, i, card, guess))
-                    outcomes.append(outcome)
+                    player_outcomes.append(outcome)
                 if has_to_have:
                     return outcomes
 
+            outcomes += player_outcomes
+
+        last_outcome = Position(self)
+        last_outcome.add_guess(Guess(your_player_index, None, None, guess))
+        outcomes.append(last_outcome)
         return outcomes
 
     def add_player(self, name, hand_size):

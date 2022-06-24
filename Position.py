@@ -28,7 +28,7 @@ class Position:
             other.eliminate_card(card)
 
     def confirm_card(self, card):
-        print(f"CONFIRMED {card}")
+        # print(f"CONFIRMED {card}")
         card_type = self.cards[card].type
         if card_type == "WEAPON":
             self.confirmed_weapon = card
