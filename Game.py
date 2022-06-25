@@ -1,4 +1,3 @@
-from Player import Player
 from Position import Position
 from Card import Card
 from Guess import Guess
@@ -38,6 +37,89 @@ class Game:
         self.guesses.append(guess)
         self.update_position()
 
+    def determine_guesses(self):
+        # print(f"Current pos score: {self.score}")
+        guesses = self.generate_guesses()
+        outcomes = {}
+        outcome_count = 0
+        get_outcomes = self.get_outcomes
+        for guess in guesses:
+            score_total = 0
+            outcome_iter = 0
+            guess_outcomes = get_outcomes(guess)
+            if len(guess_outcomes) == 1:
+                pass
+                # print(guess, guess_outcomes)
+            for outcome in guess_outcomes:
+                evaluation = outcome - self.score
+                score_total += evaluation
+                outcome_iter += 1
+
+            outcome_count += outcome_iter
+            average_score = score_total / outcome_iter
+            outcomes[tuple(guess)] = round(average_score, 2)
+
+        outcomes = dict(sorted(outcomes.items(), key=lambda x: x[1], reverse=True))
+        self.outcome_count = outcome_count
+
+        return outcomes
+
+    def generate_guesses(self):
+        guesses = []
+
+        characters = [card.name for card in self.cards.values() if card.type == "CHARACTER"]
+        rooms = [card.name for card in self.cards.values() if card.type == "ROOM"]
+        weapons = [card.name for card in self.cards.values() if card.type == "WEAPON"]
+
+        for character in characters:
+            for room in rooms:
+                for weapon in weapons:
+                    cards = [room, character, weapon]
+                    prune = not any(self.position.possible_cards.get(card) for card in cards)
+                    if prune:
+                        continue
+
+                    guesses.append(cards)
+
+        return guesses
+
+    def get_outcomes(self, guess):
+        outcomes = []
+        your_player_index = 0
+        position = self.position
+        for i, player in enumerate(self.position.players):
+            if i == your_player_index:
+                continue
+            player_outcomes = []
+            has_to_have = False
+            for card in guess:
+                if player.known_cards.get(card):
+                    has_to_have = True
+                    outcomes.append(position.evaluate_outcome(Guess(your_player_index, i, card, guess)))
+                elif player.possible_cards.get(card):
+                    player_outcomes.append(position.evaluate_outcome(Guess(your_player_index, i, card, guess)))
+                if has_to_have:
+                    return outcomes
+
+            outcomes += player_outcomes
+
+        outcomes.append(position.evaluate_outcome(Guess(your_player_index, None, None, guess)))
+
+        return outcomes
+
+    def check_confirmed(self):
+        c = self.position.confirmed_character
+        r = self.position.confirmed_room
+        w = self.position.confirmed_weapon
+
+        return c and r and w
+
+    def add_player(self, name, hand_size):
+        self.players.append([name, hand_size])
+        self.player_number += 1
+        self.g_val = self.p_val * (self.player_number - 1)
+        self.update_position()
+
     def load_cards(self):
         self.cards["REVOLVER"] = (Card("REVOLVER", "WEAPON"))
         self.cards["KNIFE"] = (Card("KNIFE", "WEAPON"))
@@ -62,103 +144,3 @@ class Game:
         self.cards["CONSERVATORY"] = (Card("CONSERVATORY", "ROOM"))
         self.cards["LIBRARY"] = (Card("LIBRARY", "ROOM"))
         self.cards["KITCHEN"] = (Card("KITCHEN", "ROOM"))
-
-    def determine_guesses(self):
-        # print(f"Current pos score: {self.score}")
-        guesses = self.generate_guesses()
-        outcomes = {}
-        outcome_count = 0
-        for guess in guesses:
-            average_score = 0
-            score_total = 0
-            outcome_iter = 0
-            guess_outcomes = self.get_outcomes(guess)
-            if len(guess_outcomes) == 1:
-                continue
-            for outcome in guess_outcomes:
-                eval = outcome.evaluate() - self.score
-                score_total += eval
-                outcome_iter += 1
-
-            outcome_count += outcome_iter
-            average_score = score_total / outcome_iter
-            outcomes[tuple(guess)] = round(average_score, 2)
-
-        outcomes = dict(sorted(outcomes.items(), key=lambda x: x[1], reverse=True))
-        self.outcome_count = outcome_count
-        return outcomes
-
-    def check_confirmed(self):
-        c = self.position.confirmed_character
-        r = self.position.confirmed_room
-        w = self.position.confirmed_weapon
-
-        if c and r and w:
-            return True
-
-        else:
-            return False
-
-    def generate_guesses(self):
-        guesses = []
-
-        characters = [card.name for card in self.cards.values() if card.type == "CHARACTER"]
-        rooms = [card.name for card in self.cards.values() if card.type == "ROOM"]
-        weapons = [card.name for card in self.cards.values() if card.type == "WEAPON"]
-
-        for character in characters:
-            for room in rooms:
-                for weapon in weapons:
-                    cards = [character, room, weapon]
-                    prune = True
-                    for card in cards:
-                        if self.position.possible_cards.get(card):
-                            prune = False
-                            break
-
-                    if prune:
-                        continue
-
-                    guesses.append([room, character, weapon])
-
-        if len(guesses) == 0:
-            print(self.position.confirmed_room)
-            print(self.position.confirmed_weapon)
-            print(self.position.confirmed_character)
-            print(self.position.possible_cards)
-        return guesses
-
-    def get_outcomes(self, guess):
-        outcomes = []
-        your_player_index = 0
-        for i, player in enumerate(self.position.players):
-            if i == your_player_index:
-                continue
-            player_outcomes = []
-            has_to_have = False
-            for card in guess:
-                if player.known_cards.get(card):
-                    has_to_have = True
-                    outcome = Position(self)
-                    outcome.add_guess(Guess(your_player_index, i, card, guess))
-                    outcomes.append(outcome)
-                elif player.possible_cards.get(card):
-                    outcome = Position(self)
-                    outcome.add_guess(Guess(your_player_index, i, card, guess))
-                    player_outcomes.append(outcome)
-                if has_to_have:
-                    return outcomes
-
-            outcomes += player_outcomes
-
-        last_outcome = Position(self)
-        last_outcome.add_guess(Guess(your_player_index, None, None, guess))
-        outcomes.append(last_outcome)
-
-        return outcomes
-
-    def add_player(self, name, hand_size):
-        self.players.append([name, hand_size])
-        self.player_number += 1
-        self.g_val = self.p_val * (self.player_number - 1)
-        self.update_position()

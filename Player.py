@@ -36,7 +36,7 @@ class Player:
         self.possible_cards.pop(card, None)
 
         if len(self.known_cards) == self.hand_size:
-            self.possible_cards = {}
+            self.possible_cards.clear()
 
         self.position.eliminate_from_others(self, card)
 
@@ -49,10 +49,7 @@ class Player:
             if self.known_cards.get(card):
                 return
 
-        show = {}
-        for card in cards:
-            if self.possible_cards.get(card):
-                show[card] = self.position.cards[card]
+        show = {card: self.position.cards[card] for card in cards if self.possible_cards.get(card)}
 
         if len(show) > 1:
             self.show_sets.append(show)
