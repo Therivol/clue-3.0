@@ -5,8 +5,13 @@ from Timer import Timer
 from GameSim import GameSim
 from GameGen import GameGen
 
-game_gen = GameGen(100)
+game_sim = GameSim(4, 0)
+game_sim.run()
+# game_gen = GameGen(50)
 sys.exit()
+
+
+# PLAYER AMOUNT GREATLY INCREASES RUNTIME
 
 game = Game()
 game.add_player("Zander", 5)

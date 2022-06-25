@@ -1,3 +1,5 @@
+import random
+
 from GameSim import GameSim
 
 
@@ -7,7 +9,7 @@ class GameGen:
         guesses = []
         instances = 0
         for i in range(number):
-            game_sim = GameSim(4, i)
+            game_sim = GameSim(random.randint(3, 6), i)
             game_sim.output_print = False
             game_sim.run()
             guesses.append(game_sim.guess_number)
@@ -18,9 +20,12 @@ class GameGen:
 
         average_runtime = sum(runtimes) / instances
         average_guesses = sum(guesses) / instances
+        accuracies = [abs(number - average_guesses) for number in guesses]
+        average_accuracy = sum(accuracies) / instances
         print()
-        print(f"AVERAGE RUNTIME: {average_runtime}")
+        print(f"AVERAGE RUNTIME: {round(average_runtime, 4)}")
         print(f"AVERAGE GUESSES: {average_guesses}")
+        print(f"AVERAGE ACCURACY: +/-{round(average_accuracy, 4)}")
 
 
 
