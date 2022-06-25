@@ -16,6 +16,7 @@ class Game:
         self.guesses = []
         self.position = None
         self.score = 0
+        self.outcome_count = 0
 
         self.player_number = len(self.players)
         self.card_number = len(self.cards)
@@ -66,20 +67,25 @@ class Game:
         # print(f"Current pos score: {self.score}")
         guesses = self.generate_guesses()
         outcomes = {}
+        outcome_count = 0
         for guess in guesses:
             average_score = 0
             score_total = 0
             outcome_iter = 0
             guess_outcomes = self.get_outcomes(guess)
+            if len(guess_outcomes) == 1:
+                continue
             for outcome in guess_outcomes:
                 eval = outcome.evaluate() - self.score
                 score_total += eval
                 outcome_iter += 1
 
+            outcome_count += outcome_iter
             average_score = score_total / outcome_iter
             outcomes[tuple(guess)] = round(average_score, 2)
 
         outcomes = dict(sorted(outcomes.items(), key=lambda x: x[1], reverse=True))
+        self.outcome_count = outcome_count
         return outcomes
 
     def check_confirmed(self):

@@ -26,7 +26,8 @@ class Player:
             self.position.confirm_card(card)
 
         if self.hand_size - len(self.known_cards) == len(self.possible_cards):
-            for card in self.possible_cards:
+            possible_cards_temp = self.possible_cards.copy()
+            for card in possible_cards_temp:
                 self.reveal_card(card)
 
     def reveal_card(self, card):
