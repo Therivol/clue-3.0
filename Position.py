@@ -10,9 +10,13 @@ class Position:
         self.confirmed_character = None
         self.confirmed_room = None
         self.confirmed_weapon = None
+        self.confirmed = False
 
         for player in game.players:
             self.players.append(Player(self, player[0], player[1]))
+
+        for card in game.your_player_hand:
+            self.players[0].reveal_card(card)
 
         for guess in game.guesses:
             self.add_guess(guess)
@@ -38,6 +42,10 @@ class Position:
             self.confirmed_room = card
 
         self.possible_cards = {n: c for n, c in self.possible_cards.items() if c.type != card_type}
+
+    def check_confirmed(self):
+        if self.confirmed_room and self.confirmed_character and self.confirmed_weapon:
+            self.confirmed = True
 
     def add_guess(self, guess):
         if guess.show_player_pos:
@@ -70,3 +78,21 @@ class Position:
         if self.confirmed_weapon:
             score += self.game.g_val * (self.game.weapon_number - 1)
         return score
+
+    def print_info(self):
+        print("-----------------------------------------")
+        print("GAME INFO: ")
+        print(f"Confirmed character: {self.confirmed_character}")
+        print(f"Confirmed room: {self.confirmed_room}")
+        print(f"Confirmed weapon: {self.confirmed_weapon}")
+        print(f"Possible cards({len(self.possible_cards)}): {list(self.possible_cards.keys())}")
+        print()
+        print("PlAYER INFO: ")
+        for player in self.players:
+            print(f"--{player.name}--")
+            print(f"Known cards({len(player.known_cards)}): {list(player.known_cards.keys())}")
+            print(f"Possible cards({len(player.possible_cards)}): {list(player.possible_cards.keys())}")
+
+        print("-----------------------------------------")
+        print()
+

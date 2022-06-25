@@ -15,6 +15,11 @@ class Timer:
         self.runtime = self.end - self.start
         return self.runtime
 
+    def reset(self):
+        self.start = time.time()
+        self.end = 0
+        self.runtime = 0
+
     @classmethod
     def get(cls, name):
         return cls.timers[name]

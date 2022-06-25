@@ -33,6 +33,10 @@ class Player:
         self.position.eliminate_card(card)
         self.known_cards[card] = self.position.cards[card]
         self.possible_cards.pop(card, None)
+
+        if len(self.known_cards) == self.hand_size:
+            self.possible_cards = {}
+
         self.position.eliminate_from_others(self, card)
 
         for i, show in enumerate(self.show_sets):

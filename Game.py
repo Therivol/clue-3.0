@@ -8,6 +8,7 @@ class Game:
     def __init__(self):
         self.players = []
         self.your_player = None
+        self.your_player_hand = []
 
         self.cards = {}
         self.load_cards()
@@ -25,15 +26,16 @@ class Game:
         self.p_val = 1
         self.g_val = self.p_val * (self.player_number - 1)
 
+    def start(self):
         self.update_position()
-        self.play_game()
-
-    def play_game(self):
-        pass
 
     def update_position(self):
         self.position = Position(self)
         self.score = self.position.evaluate()
+
+    def add_guess(self, guess):
+        self.guesses.append(guess)
+        self.update_position()
 
     def load_cards(self):
         self.cards["REVOLVER"] = (Card("REVOLVER", "WEAPON"))
@@ -61,25 +63,36 @@ class Game:
         self.cards["KITCHEN"] = (Card("KITCHEN", "ROOM"))
 
     def determine_guesses(self):
+        # print(f"Current pos score: {self.score}")
         guesses = self.generate_guesses()
         outcomes = {}
         for guess in guesses:
             average_score = 0
             score_total = 0
             outcome_iter = 0
-            for outcome in self.get_outcomes(guess):
+            guess_outcomes = self.get_outcomes(guess)
+            for outcome in guess_outcomes:
                 eval = outcome.evaluate() - self.score
                 score_total += eval
                 outcome_iter += 1
 
-            if outcome_iter == 0:
-                print(guess)
-                outcome_iter = 1
             average_score = score_total / outcome_iter
             outcomes[tuple(guess)] = round(average_score, 2)
 
         outcomes = dict(sorted(outcomes.items(), key=lambda x: x[1], reverse=True))
         return outcomes
+
+    def check_confirmed(self):
+        c = self.position.confirmed_character
+        r = self.position.confirmed_room
+        w = self.position.confirmed_weapon
+
+        if c and r and w:
+            return True
+
+        else:
+            return False
+
 
     def generate_guesses(self):
         guesses = []
@@ -134,6 +147,7 @@ class Game:
         last_outcome = Position(self)
         last_outcome.add_guess(Guess(your_player_index, None, None, guess))
         outcomes.append(last_outcome)
+
         return outcomes
 
     def add_player(self, name, hand_size):
