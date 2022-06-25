@@ -19,19 +19,23 @@ class GameGen:
 
 
 class GameSim:
-    def __init__(self, answers, player_number, id):
+    def __init__(self, player_number, id):
         self.id = id
         self.game = Game()
-        self.answers = answers
+        self.answers = []
+        self.cards = self.game.cards
         self.player_number = player_number
         self.player_hands = [[] for _ in range(player_number)]
-        self.guess_number = 0
+        self.player_shows = self.player_hands.copy()
+        self.guess_number = 1
         self.setup()
 
     def setup(self):
         game = self.game
 
         cards = list(game.cards.keys())
+
+        self.gen_answers()
         for card in self.answers:
             cards.remove(card)
 
@@ -51,17 +55,37 @@ class GameSim:
         game.your_player_hand = self.player_hands[0]
         game.your_player = game.players[0]
 
+    def gen_answers(self):
+        characters = [card.name for card in self.cards.values() if card.type == "CHARACTER"]
+        rooms = [card.name for card in self.cards.values() if card.type == "ROOM"]
+        weapons = [card.name for card in self.cards.values() if card.type == "WEAPON"]
+
+        char_answer = self.random_card(characters)
+        room_answer = self.random_card(rooms)
+        weapon_answer = self.random_card(weapons)
+
+        self.answers += [char_answer, room_answer, weapon_answer]
+
     def random_card(self, card_list):
         card = card_list[random.randint(0, len(card_list) - 1)]
         return card
 
     def check_show(self, guess):
-        for i, player in enumerate(self.player_hands):
+        for i, hand in enumerate(self.player_hands):
             if i == 0:
                 continue
+            show_card = None
             for card in guess:
-                if card in player:
-                    return i, card
+                if card in self.player_shows[i]:
+                    show_card = card
+                    return i, show_card
+                elif card in hand:
+                    show_card = card
+
+            if show_card:
+                print(show_card)
+                self.player_shows[i].append(show_card)
+                return i, show_card
 
         return None, None
 
@@ -73,19 +97,25 @@ class GameSim:
         print()
         timer = Timer(f"{self.id}")
         while not self.game.check_confirmed():
-            self.guess_number += 1
+            original_score = self.game.position.evaluate()
             timer.reset()
             guesses = self.game.determine_guesses()
             timer.stop()
             guess = list(guesses.keys())[0]
             check = self.check_show(guess)
             self.game.add_guess(Guess(0, check[0], check[1], guess))
+            new_score = self.game.position.evaluate()
 
+            print()
             print(f"GUESS NUMBER {self.guess_number}")
+            print(f"Time to generate guesses: {timer.runtime}")
             print(f"Cards: {guess}")
             print(f"Return: {check}")
-            print(f"Time to generate guesses: {timer.runtime}")
+            print(f"Score: {new_score - original_score}")
 
+            self.guess_number += 1
+
+        print()
         for i, hand in enumerate(self.player_hands):
             print(f"Hand of player {i}: {hand}")
         print(f"GEN ANSWERS: {self.answers}")

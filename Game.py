@@ -93,7 +93,6 @@ class Game:
         else:
             return False
 
-
     def generate_guesses(self):
         guesses = []
 
@@ -107,10 +106,7 @@ class Game:
                     cards = [character, room, weapon]
                     prune = True
                     for card in cards:
-                        known = False
-                        if not self.position.possible_cards.get(card):
-                            known = True
-                        if not known:
+                        if self.position.possible_cards.get(card):
                             prune = False
                             break
 
@@ -119,6 +115,11 @@ class Game:
 
                     guesses.append([room, character, weapon])
 
+        if len(guesses) == 0:
+            print(self.position.confirmed_room)
+            print(self.position.confirmed_weapon)
+            print(self.position.confirmed_character)
+            print(self.position.possible_cards)
         return guesses
 
     def get_outcomes(self, guess):

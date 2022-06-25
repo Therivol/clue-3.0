@@ -5,7 +5,7 @@ from Guess import Guess
 from Timer import Timer
 from GameGen import GameSim
 
-game = GameSim(["BILLIARD ROOM", "LOUNGE", "MR GREEN"], 4, 0)
+game = GameSim(4, 0)
 game.run()
 sys.exit()
 
