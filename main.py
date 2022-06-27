@@ -1,35 +1,27 @@
 import sys
 from Game import Game
-from Guess import Guess
 from Timer import Timer
 from GameSim import GameSim
 from GameGen import GameGen
+from GameLearn import GameLearn
 
-game_sim = GameSim(4, 0)
-game_sim.run()
-# game_gen = GameGen(50)
-sys.exit()
-
-
-# PLAYER AMOUNT GREATLY INCREASES RUNTIME
+# game_gen = GameGen(1000, 3)
 
 game = Game()
-game.add_player("Zander", 5)
-game.add_player("Father", 5)
-game.add_player("Mother", 4)
-game.add_player("Aly", 4)
-game.your_player_hand += ["MRS WHITE", "KITCHEN", "MR GREEN", "ROPE", "STUDY"]
-your_player = game.players[0]
-game.your_player = your_player
+game.add_player("Zander", 6)
+game.add_player("Father", 6)
+game.add_player("Aly", 6)
+game.your_player_hand = ['MRS PEACOCK', 'MISS SCARLET', 'BILLIARD ROOM', 'KITCHEN', 'HALL', 'BALLROOM']
+game.your_player = game.players[0]
 game.start()
-game.add_guess(Guess(0, 2, "LEAD PIPE", ["STUDY", "COLONEL MUSTARD", "LEAD PIPE"]))
+game.add_guess([0, 1, "STUDY", ['STUDY', 'COLONEL MUSTARD', 'REVOLVER']])
 
-guess_timer = Timer("guess")
-guesses = game.determine_guesses()
-print(guess_timer.stop())
-print(len(guesses))
-goo_goo = list(guesses.items())
-print(goo_goo)
+print(game.determine_guesses())
 
-# GUESS (KITCHEN, PROFESSOR PLUM, REVOLVER) says average score of 10.0 but should be 0
-# bc we know revolver is in the hand right next to us.
+# game_sim = GameSim(3, 0)
+# game_sim.run()
+# game_gen = GameGen(500, 3)
+
+# test = GameLearn(300, 3, [1, 3, 3, 27, 12, 12], 3, 3)
+
+# PLAYER AMOUNT GREATLY INCREASES RUNTIME

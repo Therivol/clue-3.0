@@ -1,7 +1,8 @@
 import random
+import sys
+
 from Game import Game
 from Timer import Timer
-from Guess import Guess
 
 
 class GameSim:
@@ -16,7 +17,7 @@ class GameSim:
         self.guess_number = 0
         self.total_runtime = 0
         self.output_print = True
-        self.setup()
+        self.game.evaluate_values = [1, 3, 3, 27, 12, 12]
 
     def setup(self):
         game = self.game
@@ -43,6 +44,8 @@ class GameSim:
         game.your_player_hand = self.player_hands[0]
         game.your_player = game.players[0]
 
+        game.update_position()
+
     def run(self):
         p = self.print
         total_timer = Timer(f"{self.id}")
@@ -58,16 +61,23 @@ class GameSim:
             timer.reset()
             guesses = self.game.determine_guesses()
             timer.stop()
-            guess = list(guesses.keys())[0]
-            # KEY ERROR SOMETIMES IDK :(
+            try:
+                guess = list(guesses.keys())[0]
+            except IndexError:
+                print(self.answers)
+                for hand in self.player_hands:
+                    print(hand)
+                sys.exit()
             check = self.check_show(guess)
-            self.game.add_guess(Guess(0, check[0], check[1], guess))
+            self.game.add_guess([0, check[0], check[1], guess])
             new_score = self.game.position.evaluate()
 
             p()
             p(f"--GUESS {self.guess_number + 1}--")
             p(f"Total outcome count: {self.game.outcome_count}")
             p(f"Time to generate guesses: {timer.runtime} s")
+            p(f"Guesses generated: {len(guesses)}")
+            p(f"Top guesses: {list(guesses.items())}")
             p(f"Cards: {guess}")
             p(f"Return: {check}")
             p(f"Score: {new_score - original_score}")
@@ -88,13 +98,13 @@ class GameSim:
         p("--------------------------------------")
 
     def gen_answers(self):
-        characters = [card.name for card in self.cards.values() if card.type == "CHARACTER"]
-        rooms = [card.name for card in self.cards.values() if card.type == "ROOM"]
-        weapons = [card.name for card in self.cards.values() if card.type == "WEAPON"]
+        sorted_cards = {"CHARACTER": [], "ROOM": [], "WEAPON": []}
+        for card, card_type in self.game.cards.items():
+            sorted_cards[card_type].append(card)
 
-        char_answer = self.random_card(characters)
-        room_answer = self.random_card(rooms)
-        weapon_answer = self.random_card(weapons)
+        char_answer = self.random_card(sorted_cards["CHARACTER"])
+        room_answer = self.random_card(sorted_cards["ROOM"])
+        weapon_answer = self.random_card(sorted_cards["WEAPON"])
 
         self.answers += [char_answer, room_answer, weapon_answer]
 

@@ -1,6 +1,4 @@
 from Position import Position
-from Card import Card
-from Guess import Guess
 
 
 class Game:
@@ -19,12 +17,13 @@ class Game:
 
         self.player_number = len(self.players)
         self.card_number = len(self.cards)
-        self.character_number = len([card for card in self.cards.values() if card.type == "CHARACTER"])
-        self.room_number = len([card for card in self.cards.values() if card.type == "ROOM"])
-        self.weapon_number = len([card for card in self.cards.values() if card.type == "WEAPON"])
+        self.character_number = len([ct for ct in self.cards.values() if ct == "CHARACTER"])
+        self.room_number = len([ct for ct in self.cards.values() if ct == "ROOM"])
+        self.weapon_number = len([ct for ct in self.cards.values() if ct == "WEAPON"])
 
+        self.evaluate_values = []
         self.p_val = 1
-        self.g_val = self.p_val * (self.player_number - 1)
+        self.g_val = self.p_val * (len(self.players) - 1)
 
     def start(self):
         self.update_position()
@@ -43,15 +42,15 @@ class Game:
         outcomes = {}
         outcome_count = 0
         get_outcomes = self.get_outcomes
+        evaluate = self.position.evaluate_outcome
         for guess in guesses:
             score_total = 0
             outcome_iter = 0
             guess_outcomes = get_outcomes(guess)
             if len(guess_outcomes) == 1:
-                pass
-                # print(guess, guess_outcomes)
+                continue
             for outcome in guess_outcomes:
-                evaluation = outcome - self.score
+                evaluation = evaluate(outcome) - self.score
                 score_total += evaluation
                 outcome_iter += 1
 
@@ -67,15 +66,15 @@ class Game:
     def generate_guesses(self):
         guesses = []
 
-        characters = [card.name for card in self.cards.values() if card.type == "CHARACTER"]
-        rooms = [card.name for card in self.cards.values() if card.type == "ROOM"]
-        weapons = [card.name for card in self.cards.values() if card.type == "WEAPON"]
+        sorted_cards = {"CHARACTER": [], "ROOM": [], "WEAPON": []}
+        for card, card_type in self.cards.items():
+            sorted_cards[card_type].append(card)
 
-        for character in characters:
-            for room in rooms:
-                for weapon in weapons:
+        for room in sorted_cards["ROOM"]:
+            for character in sorted_cards["CHARACTER"]:
+                for weapon in sorted_cards["WEAPON"]:
                     cards = [room, character, weapon]
-                    prune = not any(self.position.possible_cards.get(card) for card in cards)
+                    prune = not any(True for card in cards if card in self.position.possible_cards)
                     if prune:
                         continue
 
@@ -95,15 +94,15 @@ class Game:
             for card in guess:
                 if player.known_cards.get(card):
                     has_to_have = True
-                    outcomes.append(position.evaluate_outcome(Guess(your_player_index, i, card, guess)))
+                    outcomes.append([your_player_index, i, card, guess])
                 elif player.possible_cards.get(card):
-                    player_outcomes.append(position.evaluate_outcome(Guess(your_player_index, i, card, guess)))
+                    player_outcomes.append([your_player_index, i, card, guess])
                 if has_to_have:
                     return outcomes
 
             outcomes += player_outcomes
 
-        outcomes.append(position.evaluate_outcome(Guess(your_player_index, None, None, guess)))
+        outcomes.append([your_player_index, None, None, guess])
 
         return outcomes
 
@@ -117,30 +116,30 @@ class Game:
     def add_player(self, name, hand_size):
         self.players.append([name, hand_size])
         self.player_number += 1
-        self.g_val = self.p_val * (self.player_number - 1)
+        # self.g_val = self.p_val * (self.player_number - 1)
         self.update_position()
 
     def load_cards(self):
-        self.cards["REVOLVER"] = (Card("REVOLVER", "WEAPON"))
-        self.cards["KNIFE"] = (Card("KNIFE", "WEAPON"))
-        self.cards["LEAD PIPE"] = (Card("LEAD PIPE", "WEAPON"))
-        self.cards["ROPE"] = (Card("ROPE", "WEAPON"))
-        self.cards["CANDLESTICK"] = (Card("CANDLESTICK", "WEAPON"))
-        self.cards["WRENCH"] = (Card("WRENCH", "WEAPON"))
+        self.cards["REVOLVER"] = "WEAPON"
+        self.cards["KNIFE"] = "WEAPON"
+        self.cards["LEAD PIPE"] = "WEAPON"
+        self.cards["ROPE"] = "WEAPON"
+        self.cards["CANDLESTICK"] = "WEAPON"
+        self.cards["WRENCH"] = "WEAPON"
 
-        self.cards["MRS PEACOCK"] = (Card("MRS PEACOCK", "CHARACTER"))
-        self.cards["MISS SCARLET"] = (Card("MISS SCARLET", "CHARACTER"))
-        self.cards["COLONEL MUSTARD"] = (Card("COLONEL MUSTARD", "CHARACTER"))
-        self.cards["MR GREEN"] = (Card("MR GREEN", "CHARACTER"))
-        self.cards["MRS WHITE"] = (Card("MRS WHITE", "CHARACTER"))
-        self.cards["PROFESSOR PLUM"] = (Card("PROFESSOR PLUM", "CHARACTER"))
+        self.cards["MRS PEACOCK"] = "CHARACTER"
+        self.cards["MISS SCARLET"] = "CHARACTER"
+        self.cards["COLONEL MUSTARD"] = "CHARACTER"
+        self.cards["MR GREEN"] = "CHARACTER"
+        self.cards["PROFESSOR PLUM"] = "CHARACTER"
+        self.cards["MRS WHITE"] = "CHARACTER"
 
-        self.cards["BILLIARD ROOM"] = (Card("BILLIARD ROOM", "ROOM"))
-        self.cards["STUDY"] = (Card("STUDY", "ROOM"))
-        self.cards["HALL"] = (Card("HALL", "ROOM"))
-        self.cards["LOUNGE"] = (Card("LOUNGE", "ROOM"))
-        self.cards["DINING ROOM"] = (Card("DINING ROOM", "ROOM"))
-        self.cards["BALLROOM"] = (Card("BALLROOM", "ROOM"))
-        self.cards["CONSERVATORY"] = (Card("CONSERVATORY", "ROOM"))
-        self.cards["LIBRARY"] = (Card("LIBRARY", "ROOM"))
-        self.cards["KITCHEN"] = (Card("KITCHEN", "ROOM"))
+        self.cards["BILLIARD ROOM"] = "ROOM"
+        self.cards["STUDY"] = "ROOM"
+        self.cards["HALL"] = "ROOM"
+        self.cards["LOUNGE"] = "ROOM"
+        self.cards["DINING ROOM"] = "ROOM"
+        self.cards["BALLROOM"] = "ROOM"
+        self.cards["CONSERVATORY"] = "ROOM"
+        self.cards["LIBRARY"] = "ROOM"
+        self.cards["KITCHEN"] = "ROOM"

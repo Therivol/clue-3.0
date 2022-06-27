@@ -4,32 +4,46 @@ from Player import Player
 class Position:
     def __init__(self, game):
         self.game = game
-        self.cards = game.cards
         self.possible_cards = game.cards.copy()
+        self.cards = game.cards.copy()
         self.confirmed_character = None
         self.confirmed_room = None
         self.confirmed_weapon = None
 
+        self.cur_stack = []
+        self.next_stack = []
+
         self.players = [Player(self, player[0], player[1]) for player in game.players]
         for card in game.your_player_hand:
-            self.players[0].reveal_card(card)
+            self.add_command(self.players[0].reveal_card, card, True)
+
+        self.update_info()
 
         for guess in game.guesses:
             self.add_guess(guess)
 
-    def eliminate_card(self, *args):
-        for card in args:
-            self.possible_cards.pop(card, None)
+    def add_command(self, command, arg, immediate=False):
+        if immediate:
+            self.cur_stack.append([command, arg])
+        else:
+            self.next_stack.append([command, arg])
 
-    def eliminate_from_others(self, player, card):
-        for other in self.players:
-            if other == player:
-                continue
-            other.eliminate_card(card)
+    def update_info(self):
+        while len(self.cur_stack) > 0:
+            command, arg = self.cur_stack[0]
+            command(arg)
+            self.cur_stack.pop(0)
 
-    def confirm_card(self, card):
+        if len(self.next_stack) > 0:
+            self.cur_stack = self.next_stack.copy()
+            self.next_stack.clear()
+            self.update_info()
+
+    def eliminate_card(self, card):
+        self.possible_cards.pop(card, None)
+
+    def confirm_card(self, card, card_type):
         # print(f"CONFIRMED {card}")
-        card_type = self.cards[card].type
         if card_type == "WEAPON":
             self.confirmed_weapon = card
         elif card_type == "CHARACTER":
@@ -37,39 +51,42 @@ class Position:
         elif card_type == "ROOM":
             self.confirmed_room = card
 
-        self.possible_cards = {n: c for n, c in self.possible_cards.items() if c.type != card_type}
+        self.possible_cards = {n: c for n, c in self.possible_cards.items() if c != card_type}
 
     def add_guess(self, guess):
-        if guess.show_player_pos:
-            i = (guess.guess_player_pos + 1) % self.game.player_number
-            while i != guess.show_player_pos:
-                for card in guess.cards:
-                    self.players[i].eliminate_card(card)
+        if guess[1]:
+            i = (guess[0] + 1) % self.game.player_number
+            while i != guess[1]:
+                for card in guess[3]:
+                    self.add_command(self.players[i].eliminate_card, card, True)
                 i = (i + 1) % self.game.player_number
 
-            if guess.show_card:
-                self.players[i].reveal_card(guess.show_card)
+            if guess[2]:
+                self.add_command(self.players[i].reveal_card, guess[2], True)
             else:
-                self.players[i].add_show_set(guess.cards)
+                self.add_command(self.players[i].add_show_set, guess[3], True)
 
         else:
             for player in self.players:
-                for card in guess.cards:
-                    player.eliminate_card(card)
+                for card in guess[3]:
+                    self.add_command(player.eliminate_card, card, True)
 
-    def evaluate(self):
+        self.update_info()
+
+    def evaluae(self):
+        vals = self.game.evaluate_values
+
         score = 0
-        p_val, g_val = self.game.p_val, self.game.g_val
         for player in self.players:
-            score -= p_val * len(player.possible_cards) / 2
-            score += g_val * len(player.known_cards)
-        score -= self.game.g_val * len(self.possible_cards)
+            score -= vals[0] * len(player.possible_cards)
+            score += vals[1] * len(player.known_cards)
+        score -= vals[2] * len(self.possible_cards)
         if self.confirmed_character:
-            score += g_val * (self.game.character_number - 1)
+            score += vals[3]
         if self.confirmed_room:
-            score += g_val * (self.game.room_number - 1)
+            score += vals[4]
         if self.confirmed_weapon:
-            score += g_val * (self.game.weapon_number - 1)
+            score += vals[5]
         return score
 
     def evaluate_outcome(self, guess):
@@ -107,3 +124,22 @@ class Position:
 
         print("-----------------------------------------")
         print()
+
+    def evaluate(self):
+        p_val, g_val = self.game.p_val, self.game.g_val
+        c_num, r_num, w_num = self.game.character_number - 1, self.game.room_number - 1, self.game.weapon_number - 1
+        card_values = {"ROOM": c_num / r_num, "CHARACTER": c_num / r_num, "WEAPON": w_num / r_num}
+
+        score = 0
+        for player in self.players:
+            for card_type in player.possible_cards.values():
+                score -= p_val * card_values[card_type]
+        for card_type in self.possible_cards.values():
+            score -= g_val * card_values[card_type]
+        if self.confirmed_character:
+            score += 27 * c_num
+        if self.confirmed_room:
+            score += 27 * r_num
+        if self.confirmed_weapon:
+            score += 27 * w_num
+        return score
